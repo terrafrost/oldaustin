@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+<!-- this meta is needed to make leaflet apps look good on phones -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.76.1/dist/L.Control.Locate.min.css" />
+<link rel="stylesheet" href="leaflet-search.css" />
+<link rel="stylesheet" href="leaflet-slider.css" />
+<link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css' rel='stylesheet' />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.76.1/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+<script src="leaflet-search.src.js"></script>
+<script src="leaflet-hash.js?v=3"></script>
+<script src="leaflet.ajax.js"></script> <!-- https://github.com/calvinmetcalf/leaflet-ajax -->
+<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
+<script src="leaflet-slider.js?v=6"></script>
+<script src="leaflet-rotate-src.js?v=1"></script>
+
+<style>
+.leaflet-bottom.leaflet-right { z-index: 998 }
+#opacity {
+	width: 100%;
+	height: 100%;
+	background: url('opacity-icon.png') no-repeat center;
+	background-size: 26px 26px
+}
+.close {
+	position:absolute;
+	right:0px;
+	width:16px;
+	height:16px;
+	cursor:pointer;
+	border:1px solid #000;
+	background-color:#efefef;
+	background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAiElEQVR42r2RsQrDMAxEBRdl8SDcX8lQPGg1GBI6lvz/h7QyRRXV0qUULwfvwZ1tenw5PxToRPWMC52eA9+WDnlh3HFQ/xBQl86NFYJqeGflkiogrOvVlIFhqURFVho3x1moGAa3deMs+LS30CAhBN5nNxeT5hbJ1zwmji2k+aF6NENIPf/hs54f0sZFUVAMigAAAABJRU5ErkJggg==) no-repeat;
+	text-align:right;
+	border: 0;
+	cursor: pointer;
+	z-index: 999
+}
+
+.close:hover, .close:focus {
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAqklEQVR4XqWRMQ6DMAxF/1Fyilyj2SmIBUG5QcTCyJA5Z8jGhlBPgRi4TmoDraVmKFJlWYrlp/g5QfwRlwEVNWVa4WzfH9jK6kCkEkBjwxOhLghheMWMELUAqqwQ4OCbnE4LJnhr5IYdqQt4DJQjhe9u4vBBmnxHHNzRFkDGjHDo0VuTAqy2vAG4NkvXXDHxbGsIGlj3e835VFNtdugma/Jk0eXq0lP//5svi4PtO01oFfYAAAAASUVORK5CYII=");
+}
+
+.infobox .leaflet-popup-tip {
+	display: none
+}
+</style>
+
+</head>
+
+<body style="margin: 0; padding: 0; height: 100%">
+<div id="map" style="width: 100%; height: 100%"></div>
+</body>
+
+<script>
+var opacity = .80;
+
+var hasLegends = ['1877', '1885', '1889', '1894'];
+
+//sample data values for populate map
+var places = {};
+places['1877'] = [
+	{"loc":[30.26346, -97.74583], "title":"Austin Ice Factory"},
+	{"loc":[30.26954, -97.74181], "title":"Avenue Hotel"},
+	{"loc":[30.27228, -97.74245], "title":"Baptist Church"},
+	{"loc":[30.26346, -97.74583], "title":"Brunet & Co., Ice Factory"},
+	{"loc":[30.26395, -97.74510], "title":"Capital City Flour Mill"},
+	{"loc":[30.26338, -97.74534], "title":"Capital Ice Co."},
+	{"loc":[30.27062, -97.74020], "title":"Catholic Church, corner Ash & Brazos"},
+	{"loc":[30.26720, -97.74226], "title":"Central Hotel"},
+	{"loc":[30.26488, -97.74748], "title":"City Brewery"},
+	{"loc":[30.26657, -97.74375], "title":"City Hotel"},
+	{"loc":[30.27048, -97.74318], "title":"City Offices"},
+	{"loc":[30.26347, -97.74603], "title":"City Water Works"},
+	{"loc":[30.26831, -97.74296], "title":"Cook's Building"},
+	{"loc":[30.27237, -97.74087], "title":"Court House"},
+	{"loc":[30.27135, -97.74045], "title":"Curtis House"},
+	{"loc":[30.26560, -97.73529], "title":"Eagle Grist Mill"},
+	{"loc":[30.26393, -97.74512], "title":"Emerson & Sprinkle's Flour Mill"},
+	{"loc":[30.26368, -97.74615], "title":"Grist Mill, Old, foot of Colorado St."},
+	{"loc":[30.26896, -97.74284], "title":"I.O.O.F. Hall, 621-623 Congress Ave"},
+	{"loc":[30.27219, -97.74016], "title":"Jail"},
+	{"loc":[30.26729, -97.74470], "title":"Jones & Stelfox, Carriage Factory"},
+	{"loc":[30.26789, -97.74456], "title":"Kingsbury's Livery & Hotel"},
+	{"loc":[30.27205, -97.74168], "title":"Krohn's Hall"},
+	{"loc":[30.26960, -97.74273], "title":"Library Association"},
+	{"loc":[30.26862, -97.74389], "title":"Long, M. M. Livery"},
+	{"loc":[30.26695, -97.74743], "title":"Loomis & Christian's Sash, Door & Blind Factory"},
+	{"loc":[30.26628, -97.74299], "title":"MacGowan, J., Livery"},
+	{"loc":[30.27048, -97.74318], "title":"Market House"},
+	{"loc":[30.26923, -97.74274], "title":"Masonic Hall, 701 Congress Ave"},
+	{"loc":[30.26960, -97.74273], "title":"Masonic Hall, 711-713 Congress Ave"},
+	{"loc":[30.27157, -97.73978], "title":"Methodist Church"},
+	{"loc":[30.26927, -97.74152], "title":"Miller, M. Livery"},
+	{"loc":[30.27090, -97.74089], "title":"Millett, C. F., Sash, Door & Blind Factory"},
+	{"loc":[30.26809, -97.74373], "title":"Opera House, 10-12 W. Pecan"},
+	{"loc":[30.26664, -97.73869], "title":"Paggi, M., Carriage Factory, &c."},
+	{"loc":[30.26756, -97.73988], "title":"Platt, R., Livery"},
+	{"loc":[30.26977, -97.74050], "title":"Presbyterian Church"},
+	{"loc":[30.26685, -97.74288], "title":"Raymond House"},
+	{"loc":[30.26742, -97.73970], "title":"St. Charles Hotel"},
+	{"loc":[30.27110, -97.74002], "title":"St. Mary's Catholic Church"},
+	{"loc":[30.26809, -97.74373], "title":"Smith, A., Livery"},
+	{"loc":[30.27180, -97.74099], "title":"State Gazette Printing Office"},
+	{"loc":[30.27095, -97.74143], "title":"Statesman Printing Office"},
+	{"loc":[30.26560, -97.73529], "title":"Stern & Weinberger's Grist Mill"},
+	{"loc":[30.26494, -97.74777], "title":"Sutor, W. F., Brewery"},
+	{"loc":[30.26872, -97.74198], "title":"U.S. Post Office"}
+];
+
+places['1885'] = [
+	{"loc":[30.26562, -97.73603], "title":"Anderson, G.R.,&Co.,Corn Mill"},
+	{"loc":[30.27135, -97.74043], "title":"Austin Hotel"},
+	{"loc":[30.26339, -97.74557], "title":"Austin Ice Factory"},
+	{"loc":[30.26627, -97.73566], "title":"Austin Steam Laundry"},
+	{"loc":[30.26954, -97.74181], "title":"Avenue Hotel"},
+	{"loc":[30.26339, -97.74557], "title":"Brunet, J., Ice Factory"},
+	{"loc":[30.26682, -97.74303], "title":"Brunswick Hotel, 413-423 Cong. Ave."},
+	{"loc":[30.26841, -97.74319], "title":"Brunswick Hotel, 602 Cong. Ave."},
+	{"loc":[30.26693, -97.73898], "title":"Buass Block"},
+	{"loc":[30.26442, -97.74744], "title":"Calcasieu Lumbar Co."},
+	{"loc":[30.27262, -97.74159], "title":"Capital Buildng"},
+	{"loc":[30.26830, -97.75216], "title":"Capital Compress"},
+	{"loc":[30.26316, -97.74515], "title":"Capital Ice Factory"},
+	{"loc":[30.26873, -97.74471], "title":"Carrolton Hotel"},
+	{"loc":[30.27602, -97.74115], "title":"Central Meth. Episc. Church"},
+	{"loc":[30.26132, -97.72392], "title":"Central Oil Co.'s Mill"},
+	{"loc":[30.27046, -97.74321], "title":"City Hall"},
+	{"loc":[30.26296, -97.73369], "title":"Condon, J., Cotton Gin"},
+	{"loc":[30.27236, -97.74090], "title":"Court House"},
+	{"loc":[30.26944, -97.74477], "title":"Cumberland Presbyt. Church"},
+	{"loc":[30.26855, -97.73981], "title":"Episcopal Church"},
+	{"loc":[30.27227, -97.74247], "title":"First Baptist Church"},
+	{"loc":[30.26699, -97.74743], "title":"French, S. W., & Co., Pl'g Mill"},
+	{"loc":[30.26398, -97.74482], "title":"Gardiner, A., & Co., Pl'g Mill"},
+	{"loc":[30.26429, -97.74537], "title":"Gas Works"},
+	{"loc":[30.26789, -97.74458], "title":"Globe Hotel"},
+	{"loc":[30.26682, -97.74291], "title":"Hotel Brunswick"},
+	{"loc":[30.26373, -97.73273], "title":"H. & T. R. R. Freight Depot"},
+	{"loc":[30.26594, -97.74676], "title":"I. & G. N. R. R. Freight House"},
+	{"loc":[30.26384, -97.74646], "title":"Jones, C., Foundry"},
+	{"loc":[30.26732, -97.74477], "title":"Jones & Stelfox, Carriage W'ks"},
+	{"loc":[30.26316, -97.74515], "title":"Mattingley & Zimpleman, Ice Factory"},
+	{"loc":[30.27163, -97.73986], "title":"Methodist Church"},
+	{"loc":[30.26719, -97.74875], "title":"Millett, C.F., Planing Mill"},
+	{"loc":[30.27073, -97.74073], "title":"Millett Mansion"},
+	{"loc":[30.27095, -97.74090], "title":"Millett Opera House"},
+	{"loc":[30.26428, -97.73453], "title":"Nalle, J., Planing Mill"},
+	{"loc":[30.26985, -97.74456], "title":"Northern Presbyt. Church"},
+	{"loc":[30.26622, -97.73837], "title":"Paggis, M., Carriage Factory"},
+	{"loc":[30.26744, -97.73974], "title":"St. Charles Hotel"},
+	{"loc":[30.26892, -97.74052], "title":"St. Mary's Academy"},
+	{"loc":[30.27066, -97.74023], "title":"St .Mary's Cath. Church"},
+	{"loc":[30.26694, -97.73900], "title":"Shipman Hotel"}, // Shipman House
+	{"loc":[30.26866, -97.74355], "title":"Statesman Printing"},
+	{"loc":[30.27998, -97.74063], "title":"Turn Halle"}, // Turner Hall
+	{"loc":[30.26870, -97.74385], "title":"U.S. Government Building"},
+	{"loc":[30.26583, -97.73704], "title":"Van Patten, A., Lumber Yard"},
+];
+
+places['1889'] = [
+	{"loc":[30.26611, -97.74596], "title":"Anheuser-Busch Beer Depot"},
+	{"loc":[30.26346, -97.73259], "title":"A. & N. W. R. R. Depot"},
+	{"loc":[30.26432, -97.74533], "title":"Austin Gas Works"},
+	{"loc":[30.26339, -97.74557], "title":"Austin Ice Factory"},
+	{"loc":[30.27609, -97.74154], "title":"Austin Steam Marble Works"},
+	{"loc":[30.26265, -97.73304], "title":"Austin Stock Yards"},
+	{"loc":[30.26635, -97.75163], "title":"Austin Water Light & Power Co."},
+	{"loc":[30.26954, -97.74181], "title":"Avenue Hotel"},
+	{"loc":[30.27862, -97.74239], "title":"Bertram Hotel"},
+	{"loc":[30.27916, -97.74224], "title":"Betram R., Stores"},
+	{"loc":[30.26623, -97.74304], "title":"Board of Trade Building"},
+	{"loc":[30.26666, -97.74310], "title":"Booth Building"},
+	{"loc":[30.26742, -97.74211], "title":"Bremond, J., & Co., Dry Goods"},
+	{"loc":[30.26783, -97.74417], "title":"Brower & Stumpf, Carriage Fact'y"},
+	{"loc":[30.27025, -97.74406], "title":"Bryant Hotel"},
+	{"loc":[30.26468, -97.74750], "title":"Calcasien Lumber Co."},
+	{"loc":[30.27262, -97.74159], "title":"Capital Building (formerly)"},
+	{"loc":[30.26794, -97.75156], "title":"Capital Compress"},
+	{"loc":[30.27190, -97.74105], "title":"Capital Hotel"},
+	{"loc":[30.26509, -97.74620], "title":"Carmona Lumber Co."},
+	{"loc":[30.26873, -97.74471], "title":"Carrolton Hotel"},
+	{"loc":[30.26720, -97.74226], "title":"Central Hotel"},
+	{"loc":[30.27593, -97.74116], "title":"Central M.E. Church"},
+	{"loc":[30.27161, -97.73982], "title":"Central M.E. Church (South)"},
+	{"loc":[30.26126, -97.72370], "title":"Central Oil Mill Co."},
+	{"loc":[30.26689, -97.74745], "title":"Christian & Crooker Planning Mill"},
+	{"loc":[30.27054, -97.74355], "title":"Christian Church"},
+	{"loc":[30.27046, -97.74321], "title":"City Hall"},
+	{"loc":[30.26410, -97.74397], "title":"Colorado Hotel"},
+	{"loc":[30.26314, -97.73361], "title":"Condon's Cotton Gin & Corn Mill"},
+	{"loc":[30.27230, -97.74058], "title":"County Court House & Jail"},
+	{"loc":[30.26625, -97.73757], "title":"Curts Hotel"},
+	{"loc":[30.26862, -97.74356], "title":"Daily Statesman Printing"},
+	{"loc":[30.26809, -97.74166], "title":"Driskill, The"},
+	{"loc":[30.27226, -97.74251], "title":"First Baptist Church"},
+	{"loc":[30.26940, -97.74478], "title":"First Cumberland Presbyt. Church"},
+	{"loc":[30.26983, -97.74462], "title":"First Presbyterian Church"},
+	{"loc":[30.26409, -97.74476], "title":"Gardiner, A., Planning Mill"},
+	{"loc":[30.26988, -97.73917], "title":"Germania M.E. Church"},
+	{"loc":[30.27029, -97.74067], "title":"Granberry Hotel"},
+	{"loc":[30.27065, -97.74378], "title":"Hood Female Semimary"},
+	{"loc":[30.26827, -97.74319], "title":"Hotel Brunswick"},
+	{"loc":[30.26907, -97.74350], "title":"Hotel Orr"},
+	{"loc":[30.26373, -97.73264], "title":"H. & T. C. R. R. Freight Depot"},
+	{"loc":[30.26589, -97.74680], "title":"I & G. N. R. R. Freight Depot"},
+	{"loc":[30.26733, -97.74484], "title":"Jones & Stelfox, Carriage Works"},
+	{"loc":[30.26677, -97.74346], "title":"Kreisle Block"},
+	{"loc":[30.26635, -97.74697], "title":"Lemp's Beer Depot"},
+	{"loc":[30.26598, -97.74553], "title":"Lone Star B. Co.'s Beer Depot"},
+	{"loc":[30.26376, -97.74638], "title":"Lone Star Ice Works"},
+	{"loc":[30.26393, -97.74670], "title":"Lone Star Machine Shop"},
+	{"loc":[30.26966, -97.74400], "title":"McDonald Block"},
+	{"loc":[30.27188, -97.74625], "title":"Metropolitan African M.E. Church"},
+	{"loc":[30.26535, -97.74581], "title":"Milby & Dow, Coal Shed"},
+	{"loc":[30.26720, -97.74875], "title":"Millett, C.F., Planing Mill"},
+	{"loc":[30.27095, -97.74090], "title":"Millett Opera House"},
+	{"loc":[30.26434, -97.73421], "title":"Nalle & Co., Planing Mill"},
+	{"loc":[30.26853, -97.73975], "title":"St. David's Episc. Church"},
+	{"loc":[30.26886, -97.74047], "title":"St. Mary's Academy"},
+	{"loc":[30.27109, -97.73999], "title":"St. Mary's Catholic Church"},
+	{"loc":[30.26597, -97.74344], "title":"Saunder's Building"},
+	{"loc":[30.27156, -97.74559], "title":"Second Baptist Church"},
+	{"loc":[30.26686, -97.73888], "title":"Shipman Hotel"},
+	{"loc":[30.26973, -97.74049], "title":"Southern Presbyt. Church"},
+	{"loc":[30.26662, -97.74037], "title":"Sweet R'y Stables"},
+	{"loc":[30.27782, -97.73954], "title":"Swedish Ev. Luth. Church"},
+	{"loc":[30.27218, -97.73838], "title":"Synagogue"},
+	{"loc":[30.26808, -97.74374], "title":"Union Market"},
+	{"loc":[30.26521, -97.74434], "title":"Union Passenger Station"},
+	{"loc":[30.26869, -97.74387], "title":"U.S. Government Building"},
+	{"loc":[30.26571, -97.73711], "title":"Van Patten, A., Lumber Yard"},
+	{"loc":[30.26637, -97.74938], "title":"Waters-Pierce Oil Co."},
+	{"loc":[30.26940, -97.73751], "title":"Wesley Chapel"},
+];
+
+places['1894'] = [
+	{"loc":[30.26554, -97.73939], "title":"Alliance Cotton Yard"},
+	{"loc":[30.26618, -97.74592], "title":"Anheuser-Busch Beer Depot"},
+	{"loc":[30.26337, -97.73420], "title":"Austin Dam R.R. Car & Eng. Ho."},
+	{"loc":[30.26223, -97.72970], "title":"Austin Foundry & Machine Shop"},
+	{"loc":[30.26434, -97.74526], "title":"Austin Gas Works"},
+	{"loc":[30.26344, -97.74575], "title":"Austin Ice Factory"},
+	{"loc":[30.27609, -97.74145], "title":"Austin Marble Works"},
+	{"loc":[30.26000, -97.72236], "title":"Austin Oil M'f'g Co."},
+	{"loc":[30.26319, -97.73375], "title":"Austin Soap Works"},
+	{"loc":[30.26652, -97.75153], "title":"Austin Water, Light & Power Co."},
+	{"loc":[30.26954, -97.74181], "title":"Avenue Hotel"},
+	{"loc":[30.26623, -97.74304], "title":"Board of Trade Building"},
+	{"loc":[30.26742, -97.74211], "title":"Bremond, J., & Co., Store"},
+	{"loc":[30.26783, -97.74417], "title":"Brower & Stumpf, Wagon Shop"},
+	{"loc":[30.26468, -97.74750], "title":"Calcasien Lumber Co."},
+	{"loc":[30.26316, -97.74515], "title":"Capital Ice Factory"},
+	{"loc":[30.27262, -97.74159], "title":"Capital Building (old)"},
+	{"loc":[30.26794, -97.75156], "title":"Capital Compress"},
+	{"loc":[30.27190, -97.74105], "title":"Capital Hotel"},
+	{"loc":[30.26873, -97.74471], "title":"Carrolton Hotel"},
+	{"loc":[30.26720, -97.74226], "title":"Central Hotel"},
+	{"loc":[30.27593, -97.74116], "title":"Central M.E. Church"},
+	{"loc":[30.27161, -97.73982], "title":"Central M.E. Church South"},
+	{"loc":[30.26126, -97.72370], "title":"Central Oil Co.'s Mills"},
+	{"loc":[30.26689, -97.74745], "title":"Christian & Crooker, Planning Mill"},
+	{"loc":[30.27054, -97.74355], "title":"Christian Church"},
+	{"loc":[30.27046, -97.74321], "title":"City Hall"},
+	{"loc":[30.26410, -97.74397], "title":"Colorado Hotel"},
+	{"loc":[30.26401, -97.74662], "title":"Colorado Machine Shop"},
+	{"loc":[30.27236, -97.74090], "title":"County Court House"},
+	{"loc":[30.26944, -97.74477], "title":"Cumberland Presbyterian Church"},
+	{"loc":[30.26625, -97.73757], "title":"Curtis Hotel"},
+	{"loc":[30.26862, -97.74356], "title":"Daily Statesman Printing"},
+	{"loc":[30.26809, -97.74166], "title":"Driskill, The"},
+	{"loc":[30.27226, -97.74251], "title":"First Baptist Church"},
+	{"loc":[30.26833, -97.74317], "title":"First National Bank Building"},
+	{"loc":[30.26983, -97.74462], "title":"First Presbyterian Church"},
+	{"loc":[30.26409, -97.74476], "title":"Gardiner, J. A., Planing Mill"},
+	{"loc":[30.26988, -97.73917], "title":"German M.E. Church"},
+	{"loc":[30.27065, -97.74378], "title":"Hood Female Semimary"},
+	{"loc":[30.26907, -97.74350], "title":"Hotel Orr"},
+	{"loc":[30.26280, -97.72957], "title":"H. & T. C. R. R. Engine House"},
+	{"loc":[30.26373, -97.73264], "title":"H. & T. C. R. R. Freight Depot"},
+	{"loc":[30.26589, -97.74680], "title":"I. & G. N. R. R. Freight Depot"},
+	{"loc":[30.26677, -97.74346], "title":"Kreisle Block"},
+	{"loc":[30.26635, -97.74697], "title":"Lemp's Beer Depot"},
+	{"loc":[30.26376, -97.74638], "title":"Lone Star Ice Works"},
+	{"loc":[30.26966, -97.74400], "title":"McDonald Block"},
+	{"loc":[30.27188, -97.74625], "title":"Metropolitan Afric. M.E. Church"},
+	{"loc":[30.26720, -97.74875], "title":"Millett, C.F., Planing Mill"},
+	{"loc":[30.27095, -97.74090], "title":"Millett Opera House"},
+	{"loc":[30.26599, -97.73691], "title":"Nalle & Co., Planing Mill"}, // new location from 1889
+	{"loc":[30.26662, -97.73871], "title":"Paggi, M., Carriage Repository"},
+	{"loc":[30.26602, -97.73844], "title":"Paggi, M., Carriage Shop"},
+	{"loc":[30.27027, -97.73395], "title":"Public Schools"},
+	{"loc":[30.26853, -97.73975], "title":"St. David's Episc. Church"},
+	{"loc":[30.26886, -97.74047], "title":"St. Mary's Academy"},
+	{"loc":[30.27109, -97.73999], "title":"St. Mary's Cath. Church"},
+	{"loc":[30.26597, -97.74344], "title":"Saunders Building"},
+	{"loc":[30.27156, -97.74559], "title":"Second Baptist Church"},
+	{"loc":[30.26686, -97.73888], "title":"Shipman Hotel"},
+	{"loc":[30.26973, -97.74049], "title":"Southern Presbyt. Church"},
+	{"loc":[30.26563, -97.74401], "title":"Sutor Building"},
+	{"loc":[30.26519, -97.74611], "title":"Sutor W. J., Lumber Yard"},
+	{"loc":[30.27782, -97.73954], "title":"Swedish Evang. Luth. Church"},
+	{"loc":[30.27218, -97.73838], "title":"Synagogue"},
+	{"loc":[30.27265, -97.73934], "title":"Texas General Land Office"},
+	{"loc":[30.26502, -97.74364], "title":"Travis Hotel"},
+	{"loc":[30.27998, -97.74063], "title":"Turn Halle"}, // Turner Hall
+	{"loc":[30.26808, -97.74374], "title":"Union Market"},
+	{"loc":[30.26521, -97.74434], "title":"Union Passenger Station"},
+	{"loc":[30.26869, -97.74387], "title":"U.S. Government Building"},
+	{"loc":[30.26637, -97.74938], "title":"Waters-Pierce Oil Co."},
+	{"loc":[30.26940, -97.73751], "title":"Wesley Chapel Afric. M.E. Church"},
+];
+
+
+
+var attrs = {
+	attributionControl: false,
+	rotate: true,
+	rotateControl: {
+		closeOnZeroBearing: false,
+		// position: 'bottomleft',
+	},
+	bearing: 0,
+	// attributionControl: false,
+	// zoomControl: false,
+	compassBearing: false,
+	// trackContainerMutation: false,
+	// shiftKeyRotate: false,
+	// touchGestures: true,
+	//touchRotate: true,
+	// touchZoom: true
+}
+
+var map = L.map('map', attrs).setView([30.26863, -97.74121], 15);
+
+var maxZoom = 21;
+
+var satellite = L.tileLayer('https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.webp?sku=1017OL2ySoguQ&access_token=pk.eyJ1IjoidGVycmFmcm9zdCIsImEiOiJja2kwNjZmaXcwMWd1MnhzMHZ3c2F3cHZ5In0.BgPFILDKG_EC42pjFwW3Og'
+, {tileSize: 512, zoomOffset: -1, maxNativeZoom: 18, maxZoom: maxZoom});
+var color = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxNativeZoom: 18, maxZoom: maxZoom});
+// https://zverik.github.io/leaflet-grayscale/ might be an option as well
+var gray = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoidGVycmFmcm9zdCIsImEiOiJja2kwNjZmaXcwMWd1MnhzMHZ3c2F3cHZ5In0.BgPFILDKG_EC42pjFwW3Og'
+, {id: 'mapbox/light-v10', tileSize: 512, zoomOffset: -1, maxNativeZoom: 18, maxZoom: maxZoom});
+
+layerControl = L.control.layers().addTo(map);
+layerControl.addBaseLayer(satellite, 'Satellite');
+layerControl.addBaseLayer(color, 'Street Map');
+layerControl.addBaseLayer(gray, 'Grayscale');
+
+gray.addTo(map);
+
+var years = ['1839', '1840-large', '1853', '1872', '1872-large', '1877-cover', '1877', '1885-cover', '1885', '1889-cover', '1889', '1894-cover', '1894'];
+//var years = ['1839', '1877', '1885', '1889', '1894'];
+var yearLayers = {};
+var yearLabels = {
+	'1839': '1839',
+	'1840-large': '1840 (Large)',
+	'1853': '1853',
+	'1872': '1872',
+	'1872-large': '1872 (Large)',
+	'1877-cover': '1877',
+	'1877': '1877 (Detail)',
+	'1885-cover': '1885',
+	'1885': '1885 (Detail)',
+	'1889-cover': '1889',
+	'1889': '1889 (Detail)',
+	'1894-cover': '1894',
+	'1894': '1894 (Detail)',
+};
+var highResYears = ['1877', '1885', '1889', '1894'];
+var lowResYears = ['1840-large', '1872-large'];
+
+var boundaries = {};
+years.forEach(year => {
+	var attributes = {
+		year: year,
+		tms: 1,
+		opacity: opacity,
+		minZoom: 11,
+		maxZoom: maxZoom
+	};
+	if (lowResYears.includes(year)) {
+		attributes['maxNativeZoom'] = 17;
+	} else if (!highResYears.includes(year)) {
+		attributes['maxNativeZoom'] = 19;
+	}
+	yearLayers[year] = L.tileLayer('https://terrafrost.sfo2.digitaloceanspaces.com/maps/austin/v2/{year}/{z}/{x}/{y}.png', attributes);
+	//layerControl.addOverlay(yearLayers[year], yearLabels[year]);
+	layerControl.addOverlay(yearLayers[year], '<span id="overlay' + year + '">' + yearLabels[year] + '</span>');
+	boundaries[year] = new L.GeoJSON.AJAX("shapes/" + year + ".js");
+});
+
+var keyVisible = false;
+var recalculateTopLayer = function(event) {
+	if (!event.layer.options.year) {
+		return;
+	}
+	var topYear;
+	map.eachLayer(function (layer) {
+		if (layer.options.year) {
+			topYear = layer.options.year;
+		}
+	});
+	markersLayer.clearLayers();
+	legend.remove();
+	keyVisible = false;
+	if (hasLegends.includes(topYear)) {
+		keyVisible = true;
+		legend.addTo(map);
+		document.querySelector('.legend img').src = 'https://terrafrost.sfo2.cdn.digitaloceanspaces.com/maps/austin/v2/' + topYear + '/key.jpg';
+		document.querySelector('.close').addEventListener('click', function() {
+			keyVisible = false;
+			// manually updating hash to reflect keyVisible changes
+			hash.manualUpdate();
+			legend.remove();
+		});
+		calculateCSS();
+	}
+
+	// manually updating hash to reflect keyVisible changes
+	hash.manualUpdate();
+	
+	controlSearch.remove();
+	if (!topYear) {
+		return;
+	}
+	if (places[topYear].length) {
+		controlSearch.addTo(map);
+	}
+
+	for (i in places[topYear]) {
+		var title = places[topYear][i].title; //value searched
+		var loc = places[topYear][i].loc; //position found
+		var marker = new L.Marker(new L.latLng(loc), {title: title, opacity: 0} );
+		marker.bindPopup('title: '+ title );
+		markersLayer.addLayer(marker);
+	}
+
+	if (event.type == 'layeradd') {
+		event.layer.setOpacity(opacity);
+	}
+};
+
+var markersLayer = new L.LayerGroup();	//layer contain searched elements
+
+map.on('layerremove', recalculateTopLayer);
+map.on('layeradd', recalculateTopLayer);
+
+// https://github.com/mlevans/leaflet-hash
+var hash = new L.Hash(map);
+
+
+//yearLayers['1877'].addTo(map);
+
+//var maxZoom = 21;
+// don't use opacity for debug layer
+var layer = L.tileLayer('https://www.terrafrost.com/maps/demo.php?x={x}&y={y}&z={z}', {tms: 1, opacity: 0.7, maxZoom: maxZoom});
+//layer.addTo(map);
+layerControl.addOverlay(layer, 'Debug');
+
+// https://github.com/domoritz/leaflet-locatecontrol
+L.control.locate().addTo(map);
+
+
+// https://github.com/stefanocudini/leaflet-search
+var controlSearch = new L.Control.Search({
+	position:'topleft',		
+	layer: markersLayer,
+	initial: false,
+	zoom: 20,
+	marker: false,
+	tooltipLimit: -1
+});
+
+//map.addControl( controlSearch );
+
+var legend = L.control({position: 'bottomright'});
+
+var calculateCSS = function() {
+	var el = document.querySelector('.legend img');
+	if (!el) {
+		return;
+	}
+	var aspectRatio = screen.width / screen.height;
+	if (aspectRatio < 1) { // phone in vertical mode
+		el.style.width = '';
+		el.style.height = '40vh';
+	} else if (aspectRatio < 2) { // laptop / desktop
+		el.style.width = '30%';
+		el.style.height = '';
+	} else { // phone in horizontal mode
+		el.style.width = '';
+		el.style.height = '65vh';
+	}
+}
+
+legend.onAdd = function (map) {
+	var div = L.DomUtil.create('div', 'info legend');
+
+	var content = '<div style="position: relative">';
+	content+= '<div class="close"></div>';
+	content+= '<img src="" alt="Key" style="float: right; opacity: ' + opacity + '">';
+	content+= '</div>';
+
+	div.innerHTML = content;
+
+	return div;
+};
+
+//legend.addTo(map);
+
+map.on('resize', calculateCSS);
+
+// https://github.com/Eclipse1979/leaflet-slider
+opacitySlider = L.control.slider(function(value) {
+	opacity = value / 100;
+	map.eachLayer(function (layer) {
+		if (layer.options.year) {
+			layer.setOpacity(opacity);
+		}
+	});
+	var el = document.querySelector('.legend img');
+	if (el) {
+		el.style.opacity = opacity;
+	}
+}, {
+	step:1,
+	max: 100,
+	value: opacity * 100,
+	size: '250px',
+	id: 'slider',
+	logo: '<div id="opacity"></div>',
+	syncSlider: true
+}).addTo(map);
+
+L.control.attribution({ position: 'bottomleft' }).addTo(map);
+
+/*
+var boundaries = {};
+boundaries['1877'] = new L.GeoJSON.AJAX("shapes/1877.js");
+boundaries['1885'] = new L.GeoJSON.AJAX("shapes/1885.js");
+boundaries['1889'] = new L.GeoJSON.AJAX("shapes/1889.js");
+boundaries['1894'] = new L.GeoJSON.AJAX("shapes/1894.js");
+*/
+/*
+Object.keys(boundaries).forEach(function(key) {
+	boundaries[key] = boundaries[key].toGeoJSON();
+	//boundaries[key].addTo(map);
+});
+*/
+//boundaries['1877'].addTo(map);
+
+recalculateOverlays = function() {
+	var viewport = map.getBounds();
+	var viewportGeoJSON = {
+		"type": "Polygon", 
+		"coordinates": [
+			[
+				[viewport.getSouthWest().lng, viewport.getSouthWest().lat],
+				[viewport.getNorthWest().lng, viewport.getNorthWest().lat],
+				[viewport.getNorthEast().lng, viewport.getNorthEast().lat],
+				[viewport.getSouthEast().lng, viewport.getSouthEast().lat],
+				[viewport.getSouthWest().lng, viewport.getSouthWest().lat]
+			]
+		]
+	};
+	for (var i = 0; i < years.length; i++) {
+		var year = years[i];
+		//layerControl.removeLayer(yearLayers[year]);
+		document.getElementById('overlay' + year).style.color = 'lightgray';
+		if (turf.booleanIntersects(boundaries[year].toGeoJSON(), viewportGeoJSON)) {
+			//layerControl.addOverlay(yearLayers[year], yearLabels[year]);
+			document.getElementById('overlay' + year).style.color = 'black';
+		}
+	}
+}
+
+map.on('moveend', recalculateOverlays);
+map.on('resize', recalculateOverlays);
+
+// https://github.com/Leaflet/Leaflet.fullscreen
+map.addControl(new L.Control.Fullscreen());
+
+var popupHTML = '<h1 style="font-size: 2em; margin-bottom: 0">Austin Maps</h1><h2 style="font-size: 1em; margin-top: 0em">1800-1900, exclusive</h2><hr>';
+popupHTML+= '<p>In the top right corner of the map there\'s this icon:<p>';
+popupHTML+= '<img src="https://unpkg.com/leaflet@1.9.4/dist/images/layers.png"><br>';
+popupHTML+= '<p>If you click on it you\'ll see a bunch of years. Years that have (Detail) at the end are best viewed at high magnification.</p>';
+popupHTML+= '<p>If you\'d like to see more maps please consider contributing to the <a target="_blank" href="https://www.kickstarter.com/profile/terrafrost">kickstarter campaign</a></p>';
+
+var popup = L.popup({className: 'infobox'})
+	.setLatLng(map.getBounds().getCenter())
+	.setContent(popupHTML)
+	.openOn(map);
+
+var aspectRatio = screen.width / screen.height;
+if (aspectRatio < 1 || aspectRatio >= 2) {
+	popup.getPane().style.marginTop = (popup.getPane().scrollHeight / 2) + 'px';
+}
+
+</script>
