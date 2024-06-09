@@ -670,6 +670,9 @@ temp+= '<li>Rep\'g: repairing</li>';
 temp+= '</ul>';
 tips.push(temp);
 
+temp = '<p>If you want to use this in an <strong>iframe</strong> and don\'t want the popup to appear add <code>?nopopup</code> to the URL between the <code>.html</code> and the <code>#</code></p>';
+tips.push(temp);
+
 shuffle(tips);
 
 var tipIdx = 0;
@@ -714,8 +717,11 @@ modal.addFooterBtn('Close', 'tingle-btn tingle-btn--danger', function() {
     modal.close();
 });
 
-// open modal
-modal.open();
+var urlParams = new URLSearchParams(window.location.search);
+if (!urlParams.has('nopopup')) {
+	// open modal
+	modal.open();
+}
 </script>
 
 <!-- Google tag (gtag.js) -->
