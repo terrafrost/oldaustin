@@ -16,6 +16,7 @@
 
 - Leaflet: https://leafletjs.com/
 - Turf.js: https://turfjs.org/
+- tingle.js: https://tingle.robinparisi.com/
 
 Leaflet Plugins:
 - https://github.com/mlevans/leaflet-hash

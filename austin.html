@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="leaflet-search.css" />
 <link rel="stylesheet" href="leaflet-slider.css" />
 <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css' rel='stylesheet' />
+<link rel="stylesheet" href="tingle.css" />
+<link href='https://fonts.googleapis.com/css?family=Varela+Round' rel='stylesheet' type='text/css'>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.76.1/dist/L.Control.Locate.min.js" charset="utf-8"></script>
 <script src="leaflet-search.src.js"></script>
@@ -17,6 +19,7 @@
 <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
 <script src="leaflet-slider.js?v=6"></script>
 <script src="leaflet-rotate-src.js?v=1"></script>
+<script src="tingle.js"></script>
 <link rel="icon" href="marker.svg">
 
 <style>
@@ -48,6 +51,14 @@
 
 .infobox .leaflet-popup-tip {
 	display: none
+}
+
+.custom-class-1 {
+	font-family: "Varela Round", sans-serif;
+}
+
+.tingle-modal-box__content {
+	padding: 1rem 1rem
 }
 </style>
 
@@ -586,20 +597,101 @@ map.on('resize', recalculateOverlays);
 // https://github.com/Leaflet/Leaflet.fullscreen
 map.addControl(new L.Control.Fullscreen());
 
-var popupHTML = '<h1 style="font-size: 2em; margin-bottom: 0">Austin Maps</h1><h2 style="font-size: 1em; margin-top: 0em">1800-1900, exclusive</h2><hr>';
-popupHTML+= '<p>In the top right corner of the map there\'s this icon:<p>';
-popupHTML+= '<img src="https://unpkg.com/leaflet@1.9.4/dist/images/layers.png"><br>';
-popupHTML+= '<p>If you click on it you\'ll see a bunch of years. Years that have (Detail) at the end are best viewed at high magnification.</p>';
-popupHTML+= '<p>If you\'d like to see more maps please consider contributing to the <a target="_blank" href="https://www.kickstarter.com/profile/terrafrost">kickstarter campaign</a> or becoming a <a target="blank" href="https://www.patreon.com/oldaustin">Patreon donor</a></p>';
+var popupHeader = '<h1 style="font-size: 2em; margin-bottom: 0">Austin Maps</h1><h2 style="font-size: 1em; margin-top: 0em">1800-1900, exclusive</h2><hr>';
+var popupFooter = '<hr><p>If you\'d like to see more maps please consider contributing to the <a target="_blank" href="https://www.kickstarter.com/profile/terrafrost">kickstarter campaign</a> or becoming a <a target="blank" href="https://www.patreon.com/oldaustin">Patreon donor</a></p>';
 
-var popup = L.popup({className: 'infobox'})
-	.setLatLng(map.getBounds().getCenter())
-	.setContent(popupHTML)
-	.openOn(map);
-
-var aspectRatio = screen.width / screen.height;
-if (aspectRatio < 1 || aspectRatio >= 2) {
-	popup.getPane().style.marginTop = (popup.getPane().scrollHeight / 2) + 'px';
+// from https://stackoverflow.com/a/12646864/569976
+function shuffle(array) {
+	for (let i = array.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[array[i], array[j]] = [array[j], array[i]];
+	}
 }
 
+var tips = [], temp;
+
+temp = '<p><span style="color: gray">(Assuming you have one of the "Detail" maps selected as the top layer)</span> click on the magnifying glass icon:</p>';
+temp+= '<object data="images/magnifying-glass-solid.svg" type="image/svg+xml" style="width: 16px"></object><br>';
+temp+= '<p>Type in "hotel" and click on one of the results and it\'ll <strong>auto zoom</strong> you into that location:</p>';
+temp+= '<p>These points of interests correspond to building and places that existed in that year.</p>';
+temp+= '<p>Note that the Driskell hotel is indexed as "Driskell, The".</p>';
+tips.push(temp);
+
+temp = '<p>If you\'re accessing this on a device touch screen you can rotate the map and zoom in using touch gestures. You can reset the orientation by clicking on this symbol:</p>';
+temp+= '<object data="images/orient.svg" type="image/svg+xml"></object><br>';
+temp+= '<p><span style="color: gray">(that icon will be rotated if you have rotated the map)</span><p>';
+tips.push(temp);
+
+temp = '<p>If you\'re in the City of Austin you can have the map zoom into your current location by clicking on this icon:</p>';
+temp+= '<object data="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.76.1/location-arrow-solid.svg" type="image/svg+xml" style="width: 16px"></object><br>';temp+= '<p><span style="color: gray">(you can technically do this even if you\'re outside the bounds of any map but idk why you\'d want to)</span><p>';
+tips.push(temp);
+
+temp = '<p>You can adjust the opacity of layers by clicking on this icon:</p>';
+temp+= '<img src="opacity-icon.png" style="width: 26px"><br>';
+temp+= '<p>Then just drag the slider.<p>';
+tips.push(temp);
+
+temp = '<p>You can select layers (years) by clicking on this icon:</p>';
+temp+= '<img src="https://unpkg.com/leaflet@1.8.0/dist/images/layers-2x.png" style="width: 26px"><br>';
+temp+= '<p>As you move around the map layers that are within your field of view (viewport) are highlighted in black. Layers not within the viewport show up in gray.<p>';
+tips.push(temp);
+
+temp = '<p>The "Detail" maps often make use of <a href="https://web.mit.edu/thecity/resources/abbreviations_for_sanborn_maps.pdf" target="_blank">abbreviations</a>. Examples include:</p>';
+temp+= '<ul>';
+temp+= '<li>Dw\'g: dwelling (1878-1889)</li>';
+temp+= '<li>D: dwelling (1894+)</li>';
+temp+= '<li>Gro: grocery</li>';
+temp+= '<li>Who: wholesale</li>';
+temp+= '<li>Furne: furniture</li>';
+temp+= '<li>B & S.: boots and shoes</li>';
+temp+= '<li>Rep\'g: repairing</li>';
+temp+= '</ul>';
+tips.push(temp);
+
+shuffle(tips);
+
+var tipIdx = 0;
+
+var popupHTML = popupHeader + tips[tipIdx] + popupFooter;
+//popupHTML = popupHeader + temp + popupFooter;
+
+// instanciate new modal
+var modal = new tingle.modal({
+    footer: true,
+    stickyFooter: false,
+    closeMethods: ['overlay', 'escape'],
+    closeLabel: "Close",
+    cssClass: ['custom-class-1'],
+    //onOpen: function() {
+    //    console.log('modal open');
+    //},
+    //onClose: function() {
+    //    console.log('modal closed');
+    //},
+    beforeClose: function() {
+        // here's goes some logic
+        // e.g. save content before closing the modal
+        return true; // close the modal
+        return false; // nothing happens
+    }
+});
+
+// set content
+modal.setContent(popupHTML);
+
+// add a button
+modal.addFooterBtn('Next Tip', 'tingle-btn tingle-btn--primary', function() {
+	tipIdx++;
+	tipIdx%= tips.length;
+	modal.setContent(popupHeader + tips[tipIdx] + popupFooter);
+});
+
+// add another button
+modal.addFooterBtn('Close', 'tingle-btn tingle-btn--danger', function() {
+    // here goes some logic
+    modal.close();
+});
+
+// open modal
+modal.open();
 </script>
