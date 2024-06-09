@@ -608,6 +608,22 @@ function shuffle(array) {
 	}
 }
 
+var keydownEventHandler = function(event) {
+	var dir = 1;
+	switch (event.which) {
+		case 37: // left
+			tipIdx--;
+			break;
+		case 39: // right
+			tipIdx++;
+	}
+	tipIdx%= tips.length;
+	if (tipIdx < 0) {
+		tipIdx = tips.length - 1;
+	}
+	modal.setContent(popupHeader + tips[tipIdx] + popupFooter);
+};
+
 var tips = [], temp;
 
 temp = '<p><span style="color: gray">(Assuming you have one of the "Detail" maps selected as the top layer)</span> click on the magnifying glass icon:</p>';
@@ -662,12 +678,12 @@ var modal = new tingle.modal({
     closeMethods: ['overlay', 'escape'],
     closeLabel: "Close",
     cssClass: ['custom-class-1'],
-    //onOpen: function() {
-    //    console.log('modal open');
-    //},
-    //onClose: function() {
-    //    console.log('modal closed');
-    //},
+    onOpen: function() {
+        document.addEventListener('keydown', keydownEventHandler);
+    },
+    onClose: function() {
+        document.removeEventListener('keydown', keydownEventHandler);
+    },
     beforeClose: function() {
         // here's goes some logic
         // e.g. save content before closing the modal
