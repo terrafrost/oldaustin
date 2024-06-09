@@ -30,7 +30,7 @@
 	margin:4px 0 4px 4px;
 }
 .leaflet-control-search.search-load .search-input {
-	background: url('images/loader.gif') no-repeat center right #fff;
+	background: url('images/magnifying-glass-solid.svg') no-repeat center right #fff;
 }
 .leaflet-control-search.search-load .search-cancel {
 	visibility:hidden;
@@ -65,12 +65,11 @@
 	display:block;
 	float:left;
 	width:30px;
-	height:30px;	
-	background: url('images/search-icon.png') no-repeat 4px 4px #fff;
+	height:30px;
+	background: url('images/magnifying-glass-solid.svg') no-repeat #fff;
+        background-size: 16px 16px;
+        background-position: center;
 	border-radius:4px;
-}
-.leaflet-control-search .search-button:hover {
-	background: url('images/search-icon.png') no-repeat 4px -20px #fafafa;
 }
 .leaflet-control-search .search-tooltip {
 	position:absolute;
