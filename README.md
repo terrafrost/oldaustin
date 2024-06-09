@@ -28,3 +28,4 @@ Leaflet Plugins:
 - https://github.com/calvinmetcalf/leaflet-ajax
 - https://github.com/Leaflet/Leaflet.fullscreen
 - https://github.com/Eclipse1979/leaflet-slider
+- https://github.com/Zverik/leaflet-grayscale
