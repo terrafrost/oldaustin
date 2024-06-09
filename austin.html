@@ -20,6 +20,7 @@
 <script src="leaflet-slider.js?v=6"></script>
 <script src="leaflet-rotate-src.js?v=1"></script>
 <script src="tingle.js"></script>
+<script src="TileLayer.Grayscale.js"></script>
 <link rel="icon" href="marker.svg">
 
 <style>
@@ -355,8 +356,8 @@ var satellite = L.tileLayer('https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/
 , {tileSize: 512, zoomOffset: -1, maxNativeZoom: 18, maxZoom: maxZoom});
 var color = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxNativeZoom: 18, maxZoom: maxZoom});
 // https://zverik.github.io/leaflet-grayscale/ might be an option as well
-var gray = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoidGVycmFmcm9zdCIsImEiOiJja2kwNjZmaXcwMWd1MnhzMHZ3c2F3cHZ5In0.BgPFILDKG_EC42pjFwW3Og'
-, {id: 'mapbox/light-v10', tileSize: 512, zoomOffset: -1, maxNativeZoom: 18, maxZoom: maxZoom});
+//var gray = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoidGVycmFmcm9zdCIsImEiOiJja2kwNjZmaXcwMWd1MnhzMHZ3c2F3cHZ5In0.BgPFILDKG_EC42pjFwW3Og', {id: 'mapbox/light-v10', tileSize: 512, zoomOffset: -1, maxNativeZoom: 18, maxZoom: maxZoom});
+var gray = L.tileLayer.grayscale('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxNativeZoom: 18, maxZoom: maxZoom});
 
 layerControl = L.control.layers().addTo(map);
 layerControl.addBaseLayer(satellite, 'Satellite');
