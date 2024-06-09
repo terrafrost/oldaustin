@@ -440,7 +440,7 @@ var recalculateTopLayer = function(event) {
 	if (!topYear) {
 		return;
 	}
-	if (places[topYear].length) {
+	if (places[topYear] && places[topYear].length) {
 		controlSearch.addTo(map);
 	}
 
@@ -461,10 +461,6 @@ var markersLayer = new L.LayerGroup();	//layer contain searched elements
 
 map.on('layerremove', recalculateTopLayer);
 map.on('layeradd', recalculateTopLayer);
-
-// https://github.com/mlevans/leaflet-hash
-var hash = new L.Hash(map);
-
 
 //yearLayers['1877'].addTo(map);
 
@@ -491,6 +487,15 @@ var controlSearch = new L.Control.Search({
 //map.addControl( controlSearch );
 
 var legend = L.control({position: 'bottomright'});
+
+origHash = window.location.hash;
+
+// https://github.com/mlevans/leaflet-hash
+var hash = new L.Hash(map);
+
+if (!origHash) {
+	yearLayers['1872'].addTo(map);
+}
 
 var calculateCSS = function() {
 	var el = document.querySelector('.legend img');
