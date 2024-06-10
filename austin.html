@@ -1,8 +1,15 @@
 <!DOCTYPE html>
 <html style="height: 100%">
 <head>
+<title>Old Maps of Austin, TX: 1800 - 1900, exclusive</title>
 <!-- this meta is needed to make leaflet apps look good on phones -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:url" content="https://www.terrafrost.com/maps/austin.html" />
+<meta property="og:title" content="Old Maps of Austin, TX: 1800 - 1900, exclusive" />
+<meta property="og:description" content="Visit Austin, TX, population < 30,000, with easy access to stables for your horses" />
+<meta property="og:image" content="https://www.terrafrost.com/maps/og-austin.jpg" />
+<meta property="og:image:width" content="1971" />
+<meta property="og:image:height" content="1971" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.76.1/dist/L.Control.Locate.min.css" />
 <link rel="stylesheet" href="leaflet-search.css" />
@@ -604,7 +611,7 @@ map.on('resize', recalculateOverlays);
 map.addControl(new L.Control.Fullscreen());
 
 var popupHeader = '<h1 style="font-size: 2em; margin-bottom: 0">Austin Maps</h1><h2 style="font-size: 1em; margin-top: 0em">1800-1900, exclusive</h2><hr>';
-var popupFooter = '<hr><p>If you\'d like to see more maps please consider contributing to the <a target="_blank" href="https://www.kickstarter.com/profile/terrafrost">kickstarter campaign</a> or becoming a <a target="blank" href="https://www.patreon.com/oldaustin">Patreon donor</a></p>';
+var popupFooter = '<hr><p>If you\'d like to see more maps please consider contributing to the <a target="_blank" href="https://kickstarter.com/projects/terrafrost/georeferenced-old-austin-maps">kickstarter campaign</a> or becoming a <a target="blank" href="https://www.patreon.com/oldaustin">Patreon donor</a></p>';
 
 // from https://stackoverflow.com/a/12646864/569976
 function shuffle(array) {
